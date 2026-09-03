@@ -1,0 +1,36 @@
+# Ignore everything by default
+*
+
+# Allow repository configuration and source code
+!.gitignore
+!.gitattributes
+!.env.example
+!/config.yaml.example
+!/requirements.txt
+!/setup.bat
+!/start_bot.bat
+!/start_wrapper.bat
+!/bot.py
+!/go.mod
+!/go.sum
+!/main.go
+!/*.md
+!/utils/
+!/utils/**
+!/cmd/
+!/cmd/**
+!/.github/
+!/.github/**
+
+# Explicitly ignore sensitive credentials, media, and build artifacts
+.env
+config.yaml
+*.session
+*.session-journal
+am-dl.exe
+bin/
+bin/**
+AM-DL downloads/
+*.zip
+__pycache__/
+*.pyc

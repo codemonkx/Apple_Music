@@ -1,0 +1,42 @@
+name: Go CI & Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.1'
+    - name: Build am-dl.exe
+      run: |
+        go build -o am-dl.exe -v ./main.go
+    - name: Upload Windows Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: am-dl-windows
+        path: am-dl.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.1'
+    - name: Build am-dl
+      run: |
+        go build -o am-dl -v ./main.go
+    - name: Upload Linux Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: am-dl-linux
+        path: am-dl
