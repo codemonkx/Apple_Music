@@ -44,8 +44,11 @@ graph TD
 
 ## ✨ Key Features
 
+- **⚡ Unified 1-Click Launch**: Double-click `start_bot.bat` and go! It automatically verifies port `20020` and silently starts the WSL DRM wrapper daemon in the background without needing a second terminal window.
+- **🏷️ Exact Studio Resolution Badges**: Inspects every downloaded track with FFmpeg to display true bit depth, sample rate, codec, and bitrate (e.g. `24-bit / 192.0 kHz Hi-Res Lossless ALAC (5,890 kbps)`).
+- **📜 Full Playlist Downloader**: Send any Apple Music playlist link (`/playlist/pl...`), preview track count and metadata, and download the entire playlist packaged in a complete `.zip` archive.
 - **🔍 In-Telegram Search (`/search <query>`)**: Search Apple Music's entire catalog directly inside your chat and switch between song and album search views with interactive buttons.
-- **🎛️ Interactive Format Selection**: Pick between **24-bit Lossless ALAC**, **Dolby Atmos (Spatial Audio)**, or **Full Album (.zip)** with one tap.
+- **🎛️ Interactive Format Selection**: Pick between **24-bit Lossless ALAC**, **Dolby Atmos (Spatial Audio)**, **Full Album (.zip)**, or **Playlist (.zip)** with one tap.
 - **Zero Docker Requirement**: Runs natively on Windows using Go, Python, and MP4Box. Docker Desktop is completely eliminated.
 - **True Studio Master Audio**: Downloads genuine 24-bit Lossless ALAC (up to 192,000 Hz) verified as bit-perfect with full acoustic frequency response.
 - **2 GB Telegram Bot Uploads**: Uses Telethon MTProto to bypass Telegram's standard 50 MB bot limit, supporting full multi-disc discographies in a single `.zip`.
@@ -153,16 +156,16 @@ Once configured, using the bot is effortless:
    * Installs Telethon, PyYAML, and supporting libraries.
    * Verifies `bin/mp4box.exe` and `am-dl.exe`.
 
-2. **Start Wrapper**:
-   Double-click **`start_wrapper.bat`** and leave it minimized.
-
-3. **Start Bot**:
+2. **Launch Everything (1-Click)**:
    Double-click **`start_bot.bat`**:
    ```cmd
    .\start_bot.bat
    ```
-   * Connects to Telegram over MTProto.
-   * Confirms `✅ DRM Wrapper Status: ONLINE (Port 20020 Reachable)`.
+   * Automatically checks if the DRM wrapper daemon is listening on port `20020`.
+   * If offline, it starts the WSL daemon silently in the background.
+   * Connects to Telegram over MTProto and confirms `✅ DRM Wrapper Status: ONLINE`.
+
+*(Optional: If you ever prefer a dedicated visible terminal for the DRM wrapper, you can still run `start_wrapper.bat` separately).*
 
 ---
 
