@@ -194,13 +194,13 @@ def inspect_audio_quality(track_path: Path) -> dict:
 
             if "alac" in codec_raw:
                 tier = "Hi-Res Lossless" if sample_rate_hz >= 88200 else "Lossless"
-                display = f"{bit_depth} / {rate_khz} {tier} ALAC ({bitrate_kbs} kbps)"
+                display = f"{bit_depth} / {rate_khz} {tier} ALAC - {bitrate_kbs} kbps"
             elif "eac3" in codec_raw:
-                display = f"Dolby Atmos (Spatial Audio {rate_khz} {bitrate_kbs} kbps)"
+                display = f"Dolby Atmos Spatial Audio {rate_khz} - {bitrate_kbs} kbps"
             elif "aac" in codec_raw:
-                display = f"AAC {bit_depth} / {rate_khz} ({bitrate_kbs} kbps)"
+                display = f"AAC {bit_depth} / {rate_khz} - {bitrate_kbs} kbps"
             else:
-                display = f"{codec_raw.upper()} {bit_depth} / {rate_khz} ({bitrate_kbs} kbps)"
+                display = f"{codec_raw.upper()} {bit_depth} / {rate_khz} - {bitrate_kbs} kbps"
 
             return {
                 "codec": codec_raw,
@@ -213,6 +213,15 @@ def inspect_audio_quality(track_path: Path) -> dict:
         logger.debug(f"inspect_audio_quality note: {e}")
 
     return fallback
+
+def strip_brackets(text: str) -> str:
+    """Removes parenthetical substrings like (Original Background Score) and brackets."""
+    if not text:
+        return ""
+    cleaned = re.sub(r"\s*\([^)]*\)", "", text)
+    cleaned = re.sub(r"\s*\[[^\]]*\]", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned if cleaned else text
 
 def is_playlist_url(url: str) -> bool:
     """Checks if the URL is an Apple Music playlist."""
@@ -235,8 +244,10 @@ def fetch_playlist_info(url: str) -> dict:
             title = re.sub(r"\s+on\s+Apple\s+Music.*$", "", title)
             title = re.sub(r"\s+-\s+Apple\s+Music.*$", "", title)
             title = html.unescape(title).lstrip("‎").strip()
+            title = strip_brackets(title)
 
             desc = html.unescape(desc_m.group(1).strip()) if desc_m else "Curated Playlist"
+            desc = strip_brackets(desc)
             return {"title": title, "desc": desc, "description": desc}
     except Exception as e:
         logger.debug(f"fetch_playlist_info note: {e}")
@@ -278,9 +289,9 @@ def search_apple_music(query: str, storefront: str = "in", entity: str = "song",
 
                 results.append({
                     "is_album": (entity == "album"),
-                    "track_name": r.get("trackName") or r.get("collectionName", "Unknown Track"),
+                    "track_name": strip_brackets(r.get("trackName") or r.get("collectionName", "Unknown Track")),
                     "artist_name": r.get("artistName", "Unknown Artist"),
-                    "album_name": r.get("collectionName", "Unknown Album"),
+                    "album_name": strip_brackets(r.get("collectionName", "Unknown Album")),
                     "year": year,
                     "track_count": r.get("trackCount", 0),
                     "track_url": t_url or album_link,
@@ -305,7 +316,7 @@ def render_search_view(search_id: str, query: str, entity: str, results: list):
     for i, item in enumerate(results):
         num = i + 1
         if is_album_search:
-            year_suffix = f" ({item['year']})" if item.get("year") else ""
+            year_suffix = f" - {item['year']}" if item.get("year") else ""
             lines.append(f"**{num}. {item['album_name']}{year_suffix}**")
             lines.append(f"   {item['artist_name']} - {item['track_count']} tracks\n")
             btn_title = f"{num}. {item['album_name']}{year_suffix}"
@@ -348,7 +359,8 @@ def parse_tracks_from_output(stdout_text: str):
 def zip_entire_album(audio_files: list, cover_path: Path, archive_name: str) -> Path:
     """Creates a single .zip containing all album tracks and cover.jpg."""
     ARCHIVES_DIR.mkdir(parents=True, exist_ok=True)
-    safe_name = re.sub(r'[\\/*?:"<>|]', "_", archive_name)
+    clean_name = strip_brackets(archive_name)
+    safe_name = re.sub(r'[\\/*?:"<>|]', "_", clean_name)
     zip_path = ARCHIVES_DIR / f"{safe_name}.zip"
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -525,7 +537,11 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             return
 
         album_dir = audio_files[0]["path"].parent
-        folder_display_name = album_dir.name
+        folder_display_name = strip_brackets(album_dir.name)
+        for trk in audio_files:
+            trk["title"] = strip_brackets(trk.get("title", ""))
+            trk["album"] = strip_brackets(trk.get("album", ""))
+
         cover_path = album_dir / "cover.jpg"
         if not cover_path.exists():
             cover_path = None
@@ -550,7 +566,7 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     f"Title: {track['title']}\n"
                     f"Artist: {track['artist']}\n"
                     f"Album: {track['album']}\n"
-                    f"Size: {trk_size_mb / 1024:.2f} GB ({trk_size_mb:.1f} MB)\n"
+                    f"Size: {trk_size_mb / 1024:.2f} GB\n"
                     f"Quality: {exact_quality_str}\n\n"
                     f"File exceeds Telegram's 2,000 MB upload limit.\n"
                     f"Saved locally to:\n"
@@ -629,7 +645,7 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     f"{item_type}: {folder_display_name}\n"
                     f"Artist: {album_artist}\n"
                     f"Tracks: {total_tracks} tracks\n"
-                    f"Size: {total_size_mb / 1024:.2f} GB ({total_size_mb:.1f} MB)\n"
+                    f"Size: {total_size_mb / 1024:.2f} GB\n"
                     f"Quality: {exact_quality_str}\n\n"
                     f"File exceeds Telegram's 2,000 MB upload limit.\n"
                     f"Saved locally to:\n"
@@ -661,7 +677,7 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     f"{item_type}: {folder_display_name}\n"
                     f"Artist: {album_artist}\n"
                     f"Tracks: {total_tracks} tracks\n"
-                    f"Size: {zip_size_mb / 1024:.2f} GB ({zip_size_mb:.1f} MB)\n"
+                    f"Size: {zip_size_mb / 1024:.2f} GB\n"
                     f"Quality: {exact_quality_str}\n\n"
                     f"File exceeds Telegram's 2,000 MB upload limit.\n"
                     f"Saved locally to:\n"
@@ -946,11 +962,11 @@ def main():
             if item.get("is_album"):
                 buttons = [
                     [
-                        Button.inline("Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
-                        Button.inline("Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
+                        Button.inline("Lossless Album", data=f"dl:album:{job_id}".encode()),
+                        Button.inline("Dolby Atmos Album", data=f"dl:atmos_album:{job_id}".encode()),
                     ]
                 ]
-                year_str = f" ({item['year']})" if item.get("year") else ""
+                year_str = f" - {item['year']}" if item.get("year") else ""
                 await safe_event_edit(
                     event,
                     f"**Album Selected**\n\n"
@@ -968,7 +984,7 @@ def main():
                         Button.inline("Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
                     ],
                     [
-                        Button.inline("Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                        Button.inline("Download Full Album", data=f"dl:album:{job_id}".encode()),
                     ]
                 ]
                 await safe_event_edit(
@@ -1109,8 +1125,8 @@ def main():
             }
             buttons = [
                 [
-                    Button.inline("Lossless Playlist (.zip)", data=f"dl:playlist:{job_id}".encode()),
-                    Button.inline("Dolby Atmos Playlist (.zip)", data=f"dl:atmos_playlist:{job_id}".encode()),
+                    Button.inline("Lossless Playlist", data=f"dl:playlist:{job_id}".encode()),
+                    Button.inline("Dolby Atmos Playlist", data=f"dl:atmos_playlist:{job_id}".encode()),
                 ]
             ]
             desc_line = f"Details: {info['description']}\n" if info.get("description") else ""
@@ -1140,7 +1156,7 @@ def main():
                     Button.inline("Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
                 ],
                 [
-                    Button.inline("Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                    Button.inline("Download Full Album", data=f"dl:album:{job_id}".encode()),
                 ]
             ]
             await event.reply(
@@ -1153,8 +1169,8 @@ def main():
         else:
             buttons = [
                 [
-                    Button.inline("Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
-                    Button.inline("Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
+                    Button.inline("Lossless Album", data=f"dl:album:{job_id}".encode()),
+                    Button.inline("Dolby Atmos Album", data=f"dl:atmos_album:{job_id}".encode()),
                 ]
             ]
             await event.reply(
