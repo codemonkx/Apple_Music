@@ -4,7 +4,7 @@ language: ""         #supportedLanguage by each storefront --> https://gist.gith
 lrc-type: "lyrics"   #lyrics or syllable-lyrics
 lrc-format: "lrc"   #lrc or ttml
 embed-lrc: true
-save-lrc-file: false
+save-lrc-file: true
 save-artist-cover: false
 save-animated-artwork: false    # If enabled, requires ffmpeg
 emby-animated-artwork: false    # If enabled, requires ffmpeg
@@ -24,7 +24,7 @@ decrypt-m3u8-port: "127.0.0.1:10020"
 get-m3u8-port: "127.0.0.1:20020"
 get-m3u8-from-device: true
 get-account-port: "127.0.0.1:30020"
-get-account-from-device: false   #if set true,will auto get media-user-token
+get-account-from-device: true   # Auto-fetch media user token from wrapper for lyrics and full tracks
 
 # set to 'true' to exit on error instead of requiring manual intervention. (for using this program in scripts)
 exit-on-error: false
@@ -68,7 +68,7 @@ mv-max: 2160
 # storefront is the 2-letter country code that are available in the urls (jp, ca, us etc.).
 # if your account is from Japan, you must use jp.
 # if the storefront is different from your account, you will see a "failed to get lyrics" error in most of the songs. By default the storefront is set to US if not set.
-storefront: "enter your account storefront"
+storefront: "in"
 alac-fix: false                   # Patch malformed ALAC packets
 
 # Conversion settings
