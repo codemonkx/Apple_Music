@@ -623,11 +623,10 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             )
 
             await status_msg.edit(
-                f"**Track Delivered**\n\n"
-                f"Title: {track['title']}\n"
-                f"Artist: {track['artist']}\n"
-                f"Quality: {exact_quality_str}\n"
-                f"Size: {trk_size_mb:.1f} MB"
+                f"Track  : {track['title']}\n"
+                f"Artist : {track['artist']}\n"
+                f"Album  : {track['album']}\n"
+                f"Size   : {trk_size_mb:.1f} MB"
             )
 
         # -----------------------------------------------------
@@ -718,13 +717,12 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                 attributes=[DocumentAttributeFilename(zip_path.name)],
             )
 
-            delivered_header = "Playlist Delivered" if is_playlist else "Album Delivered"
+            key_label = "Playlist" if is_playlist else "Album "
             await status_msg.edit(
-                f"**{delivered_header}**\n\n"
-                f"{item_type}: {folder_display_name}\n"
-                f"Artist: {album_artist}\n"
-                f"Tracks: {total_tracks} tracks\n"
-                f"Size: {zip_size_mb:.1f} MB"
+                f"{key_label} : {folder_display_name}\n"
+                f"Artist : {album_artist}\n"
+                f"Tracks : {total_tracks} tracks\n"
+                f"Size   : {zip_size_mb:.1f} MB"
             )
 
             if zip_path.exists():
