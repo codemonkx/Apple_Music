@@ -135,14 +135,14 @@ To run your own private Telegram bot with **2,000 MB (2 GB) upload capabilities*
 2. Send `/newbot`.
 3. Enter a display name for your bot (e.g., `My Apple Music Bot`).
 4. Enter a unique username ending in `bot` (e.g., `MyAppleMusicDownload_bot`).
-5. Copy the **HTTP API Bot Token** provided by BotFather (looks like `8825166911:AAGLDIMebm...`).
+5. Copy the **HTTP API Bot Token** provided by BotFather (looks like `1234567890:ABCdefGHIjkl...`).
 
 ### Step 2: Get Telegram API ID & API Hash (Required for 2GB MTProto Uploads)
 Standard Telegram bot tokens are restricted to sending files under 50 MB. To unlock **2,000 MB (2 GB)** direct uploads:
 1. Log in to [my.telegram.org](https://my.telegram.org) using your Telegram phone number.
 2. Click on **API Development Tools**.
 3. Fill in the short form (App title and Short name can be anything, e.g., `MusicBot`).
-4. Copy your **`api_id`** (numeric, e.g. `36379870`) and **`api_hash`** (string, e.g. `f9a516a50ef...`).
+4. Copy your **`api_id`** (numeric, e.g. `12345678`) and **`api_hash`** (string, e.g. `abcdef0123456789...`).
 
 ### Step 3: Configure `.env`
 1. In the project folder, create a file named `.env` (or copy `.env.example` to `.env`):

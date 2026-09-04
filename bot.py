@@ -86,9 +86,9 @@ def load_bot_settings():
             logger.warning(f"Could not read config.yaml: {e}")
 
     # Fallback defaults
-    api_id = api_id or 36379870
-    api_hash = api_hash or "f9a516a50ef4f5727a055e148d49005b"
-    bot_token = bot_token or "8825166911:AAGLDIMebmDkWUjTRsLL95-LM4HLMn0DDos"
+    api_id = api_id or 0
+    api_hash = str(api_hash or "").strip()
+    bot_token = str(bot_token or "").strip()
 
     try:
         api_id = int(api_id)
