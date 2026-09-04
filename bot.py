@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent
 BIN_DIR = BASE_DIR / "bin"
 DOWNLOADS_DIR = BASE_DIR / "AM-DL downloads"
 ARCHIVES_DIR = DOWNLOADS_DIR / "Archives"
-EXE_PATH = BASE_DIR / "am-dl.exe"
+EXE_PATH = BASE_DIR / ("am-dl" if sys.platform != "win32" else "am-dl.exe")
 CONFIG_PATH = BASE_DIR / "config.yaml"
 ENV_PATH = BASE_DIR / ".env"
 
@@ -133,11 +133,11 @@ def is_wrapper_running() -> bool:
         return False
 
 def ensure_wrapper_running() -> bool:
-    """Checks if wrapper is alive. If not, auto-starts it with auto-restart loop in WSL."""
+    """Checks if wrapper is alive. If not, auto-starts it with auto-restart loop natively or in WSL."""
     if is_wrapper_running():
         return True
 
-    logger.info("DRM Wrapper is offline. Auto-starting persistent wrapper daemon in WSL...")
+    logger.info("DRM Wrapper is offline. Auto-starting persistent wrapper daemon...")
     try:
         wrapper_sh = (
             "if [ ! -f ~/wrapper/wrapper ]; then "
@@ -147,7 +147,11 @@ def ensure_wrapper_running() -> bool:
             "fi; "
             "cd ~/wrapper && while true; do ./wrapper; sleep 2; done"
         )
-        cmd = ["wsl", "-e", "bash", "-c", wrapper_sh]
+        if sys.platform == "win32":
+            cmd = ["wsl", "-e", "bash", "-c", wrapper_sh]
+        else:
+            cmd = ["bash", "-c", wrapper_sh]
+
         subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,
@@ -160,7 +164,7 @@ def ensure_wrapper_running() -> bool:
                 logger.info("DRM Wrapper auto-started successfully!")
                 return True
     except Exception as e:
-        logger.error(f"Failed to auto-start wrapper via WSL: {e}")
+        logger.error(f"Failed to auto-start wrapper: {e}")
 
     return is_wrapper_running()
 

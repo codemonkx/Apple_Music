@@ -8,9 +8,10 @@ A high-performance, native Windows/Linux tool and Telegram Bot to download, decr
 - [Architecture: How It Works](#-architecture-how-it-works)
 - [Key Features](#-key-features)
 - [Prerequisites](#-prerequisites)
+- [⚡ Complete GitHub Clone Setup Guide](#-complete-github-clone-setup-guide)
 - [🤖 Telegram Bot Setup Guide](#-telegram-bot-setup-guide)
 - [🍎 Apple Music & DRM Wrapper Setup Guide](#-apple-music--drm-wrapper-setup-guide)
-- [🚀 Quick Start (1-Click Launchers)](#-quick-start-1-click-launchers)
+- [🚀 Quick Start & Launchers](#-quick-start--launchers)
 - [💬 Bot Usage & Commands](#-bot-usage--commands)
 - [💻 CLI (Command-Line) Usage](#-cli-command-line-usage)
 - [⚙️ Configuration Reference (`config.yaml`)](#-configuration-reference-configyaml)
@@ -55,19 +56,68 @@ graph TD
 - **Live Real-time Progress**: Streams download speeds, current track titles, decryption progress, and upload bars directly into Telegram.
 - **Embedded Lyrics & Covers**: Automatically extracts and embeds timed `.lrc` lyrics and square album artwork (`cover.jpg`).
 
----
-
 ## 📦 Prerequisites
 
-Ensure you have the following installed on your Windows machine:
+### 🪟 Windows Requirements:
 1. **Python 3.10+**: Download from [python.org](https://www.python.org/) (ensure **"Add Python to PATH"** is checked during installation).
 2. **WSL2 (Windows Subsystem for Linux)**:
-   * To enable WSL on Windows, open PowerShell as Administrator and run:
+   * Open PowerShell as Administrator and run:
      ```powershell
      wsl --install
      ```
-   * Restart your PC if prompted. *(WSL is used solely to host the lightweight local DRM wrapper daemon).*
-3. **Go 1.23+ (Optional)**: Only needed if you wish to modify Go source code. The compiled executable `am-dl.exe` is already pre-built and included.
+   * Restart your PC if prompted. *(Used solely to host the local DRM wrapper daemon).*
+
+### 🐧 Linux Requirements (Ubuntu / Debian / Fedora / Arch / Linux Mint):
+* No WSL or Docker required! Everything runs natively.
+* Install system packages via terminal:
+  ```bash
+  # Ubuntu / Debian / Mint
+  sudo apt update && sudo apt install -y python3 python3-pip golang ffmpeg gpac curl unzip
+
+  # Arch Linux / Manjaro
+  sudo pacman -S python python-pip go ffmpeg gpac curl unzip
+  ```
+
+---
+
+## ⚡ Complete GitHub Clone Setup Guide
+
+Follow these steps when setting up this project from a fresh `git clone`:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/codemonkx/Apple_Music.git
+cd Apple_Music
+```
+
+### 2. Create Active Configuration Files
+```bash
+# Windows (CMD / PowerShell):
+copy .env.example .env
+copy config.yaml.example config.yaml
+
+# Linux / macOS:
+cp .env.example .env
+cp config.yaml.example config.yaml
+```
+
+### 3. Add Telegram & Apple Music Credentials
+* **Telegram Bot Tokens (`.env`)**:
+  Open `.env` and fill in `TG_API_ID`, `TG_API_HASH`, and `TG_BOT_TOKEN`.
+* **Apple Music Storefront & Token (`config.yaml`)**:
+  Open `config.yaml` and set your storefront country:
+  ```yaml
+  storefront: "in"  # Change to "us", "in", "gb", "jp", etc.
+  ```
+  *(Optional: If fetching lyrics manually, paste your `media-user-token` in line 1 of `config.yaml`).*
+
+### 4. Build & Install Dependencies
+* **Windows**: Run `.\setup.bat` (and build Go binary if modifying source: `go build -o am-dl.exe main.go`).
+* **Linux**: Run `go build -o am-dl main.go && chmod +x am-dl && pip3 install -r requirements.txt`.
+
+### 5. Launch the Bot
+* **Windows**: Double-click `start_bot.bat` (or `.\start_bot.bat`).
+* **Linux**: Run `python3 bot.py`.
 
 ---
 
@@ -144,28 +194,42 @@ The DRM wrapper decrypts FairPlay/Widevine audio keys locally on your machine:
 
 ---
 
-## 🚀 Quick Start (1-Click Launchers)
+## 🚀 Quick Start & Launchers
 
-Once configured, using the bot is effortless:
+### 🪟 Windows (1-Click Launchers):
 
 1. **Install Dependencies (First Time Only)**:
    Double-click **`setup.bat`**:
    ```cmd
    .\setup.bat
    ```
-   * Installs Telethon, PyYAML, and supporting libraries.
-   * Verifies `bin/mp4box.exe` and `am-dl.exe`.
-
 2. **Launch Everything (1-Click)**:
    Double-click **`start_bot.bat`**:
    ```cmd
    .\start_bot.bat
    ```
-   * Automatically checks if the DRM wrapper daemon is listening on port `20020`.
-   * If offline, it starts the WSL daemon silently in the background.
-   * Connects to Telegram over MTProto and confirms `✅ DRM Wrapper Status: ONLINE`.
+   * Automatically starts the background WSL DRM daemon and launches `bot.py`.
 
-*(Optional: If you ever prefer a dedicated visible terminal for the DRM wrapper, you can still run `start_wrapper.bat` separately).*
+---
+
+### 🐧 Linux Laptop / Desktop Setup:
+
+1. **Build the Linux Downloader Binary**:
+   ```bash
+   go build -o am-dl main.go
+   chmod +x am-dl
+   ```
+
+2. **Install Python Libraries**:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. **Launch Bot & DRM Wrapper (1-Command)**:
+   ```bash
+   python3 bot.py
+   ```
+   *`bot.py` automatically detects Linux and starts the native DRM wrapper daemon in the background on port `20020`.*
 
 ---
 
