@@ -1,5 +1,10 @@
 # 🎵 Apple Music Studio Lossless Downloader & Telegram Bot
 
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![Go Version](https://img.shields.io/badge/go-1.23%2B-cyan.svg)
+![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-brightgreen.svg)
+![License](https://img.shields.io/badge/license-MIT-orange.svg)
+
 A high-performance, native Windows/Linux tool and Telegram Bot to download, decrypt, tag, and package Apple Music tracks and albums in **Bit-Perfect 24-bit Studio Lossless ALAC (up to 192 kHz) / Dolby Atmos**.
 
 ---
@@ -288,7 +293,7 @@ Key options inside `config.yaml`:
 | `embed-cover` | `true` | Embeds high-resolution cover art into track files. |
 | `cover-size` | `5000x5000` | Resolution for downloaded and embedded album artwork. |
 | `embed-lrc` | `true` | Embeds synchronized `.lrc` lyrics into M4A tags. |
-| `template-decrypt` | `false` | In-memory key decryption pipeline. |
+| `template-decrypt` | `true` | Fast multi-threaded in-memory key decryption pipeline. |
 | `key-server` | `127.0.0.1:40020` | Local DRM wrapper decryption port. |
 | `get-m3u8-port` | `127.0.0.1:20020` | Local DRM wrapper stream manifest port. |
 
