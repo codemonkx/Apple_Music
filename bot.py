@@ -368,6 +368,9 @@ def zip_entire_album(audio_files: list, cover_path: Path, archive_name: str) -> 
             zipf.write(cover_path, "cover.jpg")
         for trk in audio_files:
             zipf.write(trk["path"], trk["path"].name)
+            lrc_file = trk["path"].with_suffix(".lrc")
+            if lrc_file.exists():
+                zipf.write(lrc_file, lrc_file.name)
 
     return zip_path
 
