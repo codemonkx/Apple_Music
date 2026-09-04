@@ -296,27 +296,22 @@ def search_apple_music(query: str, storefront: str = "in", entity: str = "song",
 # ---------------------------------------------------------
 def render_search_view(search_id: str, query: str, entity: str, results: list):
     is_album_search = (entity == "album")
-    type_str = "💿 Albums" if is_album_search else "🎵 Songs"
+    type_str = "Albums" if is_album_search else "Songs"
     lines = [
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "✦  **APPLE MUSIC CATALOG**  ✦",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        f"🔍  **Query**   │ `{query}`",
-        f"📂  **Section** │ `{type_str}`",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"**Search Results for \"{query}\" ({type_str})**\n"
     ]
     buttons = []
 
     for i, item in enumerate(results):
         num = i + 1
         if is_album_search:
-            year_prefix = f"{item['year']} — " if item.get("year") else ""
-            lines.append(f"**{num}.** 💿 **{year_prefix}{item['album_name']}**")
-            lines.append(f"     👤 {item['artist_name']}  •  📊 {item['track_count']} Tracks\n")
-            btn_title = f"{num}. {year_prefix}{item['album_name']}"
+            year_suffix = f" ({item['year']})" if item.get("year") else ""
+            lines.append(f"**{num}. {item['album_name']}{year_suffix}**")
+            lines.append(f"   {item['artist_name']} - {item['track_count']} tracks\n")
+            btn_title = f"{num}. {item['album_name']}{year_suffix}"
         else:
-            lines.append(f"**{num}.** 🎶 **{item['track_name']}**")
-            lines.append(f"     👤 {item['artist_name']}  •  💿 *{item['album_name']}*\n")
+            lines.append(f"**{num}. {item['track_name']}**")
+            lines.append(f"   {item['artist_name']} - {item['album_name']}\n")
             btn_title = f"{num}. {item['track_name']}"
 
         if len(btn_title) > 34:
@@ -325,12 +320,11 @@ def render_search_view(search_id: str, query: str, entity: str, results: list):
 
     # Add toggle button between Songs and Albums
     if is_album_search:
-        buttons.append([Button.inline("🎵 Switch to Songs Search", data=f"tgl:{search_id}:song".encode())])
+        buttons.append([Button.inline("Switch to Songs Search", data=f"tgl:{search_id}:song".encode())])
     else:
-        buttons.append([Button.inline("💿 Switch to Albums Search", data=f"tgl:{search_id}:album".encode())])
+        buttons.append([Button.inline("Switch to Albums Search", data=f"tgl:{search_id}:album".encode())])
 
-    lines.append("────────────────────────────")
-    lines.append("👇 *Tap an item below to select format:*")
+    lines.append("Select an item to choose download format:")
     return "\n".join(lines), buttons
 
 # ---------------------------------------------------------
@@ -383,7 +377,7 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
     status_msg.edit = safe_status_edit
 
     ensure_wrapper_running()
-    wrapper_warning = "" if is_wrapper_running() else "\n⚠️ `DRM Wrapper offline (Port 20020)`"
+    wrapper_warning = "\n(DRM Wrapper offline on port 20020)" if not is_wrapper_running() else ""
 
     # If full album, ensure any ?i= is stripped so am-dl downloads all tracks
     if not is_single_song and not is_playlist:
@@ -396,13 +390,10 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
         target_type = "Single Track" if is_single_song else "Full Album"
 
     await status_msg.edit(
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"✦  **APPLE MUSIC**  ✦\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎯  **Target**   │ `{target_type}`\n"
-        f"💎  **Quality**  │ `{mode_name}`\n"
-        f"⚡  **Status**   │ `Connecting to Apple Music API...`" + wrapper_warning + "\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"**Initializing Download**\n\n"
+        f"Target: {target_type}\n"
+        f"Quality: {mode_name}\n"
+        f"Status: Connecting to Apple Music API...{wrapper_warning}",
         buttons=None
     )
 
@@ -462,38 +453,29 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     current_song_name = line
                 elif "Downloading..." in line or "Decrypting..." in line:
                     msg_text = (
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"✦  **DOWNLOADING MASTER**  ✦\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🎶  **Track**    │ `{current_song_name}`\n"
-                        f"📊  **Index**    │ `{current_track_num}`\n"
-                        f"⚡  **State**    │ `{line}`\n"
-                        f"💎  **Audio**    │ `{mode_name}`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                        f"**Downloading**\n\n"
+                        f"Track: {current_song_name}\n"
+                        f"Progress: {current_track_num}\n"
+                        f"Status: {line}\n"
+                        f"Quality: {mode_name}"
                     )
                     await update_status_live(msg_text)
                 elif "Decrypted" in line or "Downloaded" in line:
                     msg_text = (
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"✦  **DOWNLOADING MASTER**  ✦\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🎶  **Track**    │ `{current_song_name}`\n"
-                        f"📊  **Index**    │ `{current_track_num}`\n"
-                        f"🔓  **State**    │ `{line}` ✅\n"
-                        f"💎  **Audio**    │ `{mode_name}`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                        f"**Downloading**\n\n"
+                        f"Track: {current_song_name}\n"
+                        f"Progress: {current_track_num}\n"
+                        f"Status: {line}\n"
+                        f"Quality: {mode_name}"
                     )
                     await update_status_live(msg_text)
                 elif "Track already exists locally" in line:
                     msg_text = (
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"✦  **DOWNLOADING MASTER**  ✦\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🎶  **Track**    │ `{current_song_name}`\n"
-                        f"📊  **Index**    │ `{current_track_num}`\n"
-                        f"⚡  **State**    │ `Cached on disk` ✅\n"
-                        f"💎  **Audio**    │ `{mode_name}`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                        f"**Downloading**\n\n"
+                        f"Track: {current_song_name}\n"
+                        f"Progress: {current_track_num}\n"
+                        f"Status: Cached on disk\n"
+                        f"Quality: {mode_name}"
                     )
                     await update_status_live(msg_text)
 
@@ -537,11 +519,8 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
 
         if not audio_files:
             await status_msg.edit(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"❌  **DOWNLOAD FAILED**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"No audio files found. Please verify that `wrapper` is running in WSL.\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                "**Download Failed**\n\n"
+                "No audio files were found. Please verify that the DRM wrapper is running."
             )
             return
 
@@ -555,7 +534,6 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
         quality_info = inspect_audio_quality(audio_files[0]["path"])
         exact_quality_str = quality_info.get("display", mode_name)
         item_type = "Playlist" if is_playlist else "Album"
-        item_icon = "📜" if is_playlist else "💿"
 
         # -----------------------------------------------------
         # Delivery Mode 1: Single Audio Track
@@ -568,31 +546,24 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             # Check if single track exceeds Telegram's 2,000 MB limit
             if trk_size_mb >= 2000:
                 await status_msg.edit(
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✦  **TRACK STORED LOCALLY**  ✦\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🎵  **Title**     │ `{track['title']}`\n"
-                    f"👤  **Artist**    │ `{track['artist']}`\n"
-                    f"💿  **Album**     │ `{track['album']}`\n"
-                    f"📁  **Size**      │ `{trk_size_mb / 1024:.2f} GB` ({trk_size_mb:.1f} MB)\n"
-                    f"💎  **Quality**   │ `{exact_quality_str}`\n\n"
-                    f"⚠️  *Exceeds Telegram's 2,000 MB upload limit.*\n\n"
-                    f"📂  **Saved Locally on PC:**\n"
-                    f"`{trk_path}`\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✨ *Decrypted and saved in bit-perfect studio quality!*"
+                    f"**Track Stored Locally**\n\n"
+                    f"Title: {track['title']}\n"
+                    f"Artist: {track['artist']}\n"
+                    f"Album: {track['album']}\n"
+                    f"Size: {trk_size_mb / 1024:.2f} GB ({trk_size_mb:.1f} MB)\n"
+                    f"Quality: {exact_quality_str}\n\n"
+                    f"File exceeds Telegram's 2,000 MB upload limit.\n"
+                    f"Saved locally to:\n"
+                    f"`{trk_path}`"
                 )
                 return
 
             await status_msg.edit(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **UPLOADING TO TELEGRAM**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🎵  **Track**    │ `{track['title']}`\n"
-                f"👤  **Artist**   │ `{track['artist']}`\n"
-                f"📁  **Size**     │ `{trk_size_mb:.1f} MB`\n"
-                f"💎  **Quality**  │ `{exact_quality_str}`\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**Uploading to Telegram**\n\n"
+                f"Track: {track['title']}\n"
+                f"Artist: {track['artist']}\n"
+                f"Size: {trk_size_mb:.1f} MB\n"
+                f"Quality: {exact_quality_str}"
             )
 
             last_upload_edit = 0
@@ -604,28 +575,19 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     pct = (current / total) * 100
                     try:
                         await status_msg.edit(
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"✦  **UPLOADING TO TELEGRAM**  ✦\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🎵  **Track**    │ `{trk_path.name}`\n"
-                            f"📁  **Size**     │ `{total / (1024*1024):.1f} MB`\n"
-                            f"⚡  **Progress** │ `{pct:.1f}%` ({current / (1024*1024):.1f} MB)\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                            f"**Uploading to Telegram**\n\n"
+                            f"Track: {trk_path.name}\n"
+                            f"Progress: {pct:.1f}% ({current / (1024*1024):.1f} MB / {total / (1024*1024):.1f} MB)"
                         )
                     except Exception:
                         pass
 
             # Send directly as playable Telegram Audio
             track_caption = (
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **APPLE MUSIC LOSSLESS**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🎵  **Title**     │ {track['title']}\n"
-                f"👤  **Artist**    │ {track['artist']}\n"
-                f"💿  **Album**     │ {track['album']}\n"
-                f"💎  **Quality**   │ {exact_quality_str}\n"
-                f"📁  **Size**      │ {trk_size_mb:.1f} MB\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**{track['title']}**\n"
+                f"{track['artist']} - {track['album']}\n\n"
+                f"Quality: {exact_quality_str}\n"
+                f"Size: {trk_size_mb:.1f} MB"
             )
 
             await client.send_file(
@@ -645,13 +607,11 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             )
 
             await status_msg.edit(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅  **TRACK DELIVERED**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🎵  **Title**    │ `{track['title']}`\n"
-                f"📁  **Size**     │ `{trk_size_mb:.1f} MB`\n"
-                f"💎  **Quality**  │ `{exact_quality_str}`\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**Track Delivered**\n\n"
+                f"Title: {track['title']}\n"
+                f"Artist: {track['artist']}\n"
+                f"Quality: {exact_quality_str}\n"
+                f"Size: {trk_size_mb:.1f} MB"
             )
 
         # -----------------------------------------------------
@@ -665,31 +625,23 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             # Check if total album/playlist exceeds Telegram's 2,000 MB limit
             if total_size_mb >= 2000:
                 await status_msg.edit(
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✦  **{item_type.upper()} STORED LOCALLY**  ✦\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"{item_icon}  **{item_type}**    │ `{folder_display_name}`\n"
-                    f"👤  **Artist**   │ `{album_artist}`\n"
-                    f"📊  **Tracks**   │ `{total_tracks} tracks` (100% Downloaded)\n"
-                    f"📁  **Size**     │ `{total_size_mb / 1024:.2f} GB` ({total_size_mb:.1f} MB)\n"
-                    f"💎  **Quality**  │ `{exact_quality_str}`\n\n"
-                    f"⚠️  *Exceeds Telegram's 2,000 MB upload limit.*\n\n"
-                    f"📂  **Saved Locally on PC:**\n"
-                    f"`{album_dir}`\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✨ *All {total_tracks} tracks are saved in studio quality!*"
+                    f"**{item_type} Stored Locally**\n\n"
+                    f"{item_type}: {folder_display_name}\n"
+                    f"Artist: {album_artist}\n"
+                    f"Tracks: {total_tracks} tracks\n"
+                    f"Size: {total_size_mb / 1024:.2f} GB ({total_size_mb:.1f} MB)\n"
+                    f"Quality: {exact_quality_str}\n\n"
+                    f"File exceeds Telegram's 2,000 MB upload limit.\n"
+                    f"Saved locally to:\n"
+                    f"`{album_dir}`"
                 )
                 return
 
             await status_msg.edit(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **PACKAGING {item_type.upper()}**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"{item_icon}  **{item_type}**    │ `{folder_display_name}`\n"
-                f"📊  **Tracks**   │ `{total_tracks} track(s)` + Cover Art\n"
-                f"📁  **Total**    │ `{total_size_mb:.1f} MB`\n"
-                f"🗜️  **State**    │ `Creating {folder_display_name}.zip...`\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**Packaging {item_type}**\n\n"
+                f"{item_type}: {folder_display_name}\n"
+                f"Tracks: {total_tracks} tracks\n"
+                f"Status: Creating zip archive..."
             )
 
             loop = asyncio.get_running_loop()
@@ -705,19 +657,15 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                 if zip_path.exists():
                     zip_path.unlink()
                 await status_msg.edit(
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✦  **{item_type.upper()} STORED LOCALLY**  ✦\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"{item_icon}  **{item_type}**    │ `{folder_display_name}`\n"
-                    f"👤  **Artist**   │ `{album_artist}`\n"
-                    f"📊  **Tracks**   │ `{total_tracks} tracks` (100% Downloaded)\n"
-                    f"📁  **Size**     │ `{zip_size_mb / 1024:.2f} GB` ({zip_size_mb:.1f} MB)\n"
-                    f"💎  **Quality**  │ `{exact_quality_str}`\n\n"
-                    f"⚠️  *Exceeds Telegram's 2,000 MB upload limit.*\n\n"
-                    f"📂  **Saved Locally on PC:**\n"
-                    f"`{album_dir}`\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✨ *All {total_tracks} tracks are saved in studio quality!*"
+                    f"**{item_type} Stored Locally**\n\n"
+                    f"{item_type}: {folder_display_name}\n"
+                    f"Artist: {album_artist}\n"
+                    f"Tracks: {total_tracks} tracks\n"
+                    f"Size: {zip_size_mb / 1024:.2f} GB ({zip_size_mb:.1f} MB)\n"
+                    f"Quality: {exact_quality_str}\n\n"
+                    f"File exceeds Telegram's 2,000 MB upload limit.\n"
+                    f"Saved locally to:\n"
+                    f"`{album_dir}`"
                 )
                 return
 
@@ -730,30 +678,20 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                     pct = (current / total) * 100
                     try:
                         await status_msg.edit(
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"✦  **UPLOADING TO TELEGRAM**  ✦\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"📦  **Archive**  │ `{zip_path.name}`\n"
-                            f"📁  **Size**     │ `{zip_size_mb:.1f} MB`\n"
-                            f"⚡  **Progress** │ `{pct:.1f}%` ({current / (1024*1024):.1f} MB)\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                            f"**Uploading to Telegram**\n\n"
+                            f"Archive: {zip_path.name}\n"
+                            f"Progress: {pct:.1f}% ({current / (1024*1024):.1f} MB / {total / (1024*1024):.1f} MB)"
                         )
                     except Exception:
                         pass
 
             # Upload single zip directly over MTProto
-            header_title = "APPLE MUSIC PLAYLIST" if is_playlist else "APPLE MUSIC ALBUM"
             album_caption = (
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **{header_title}**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"{item_icon}  **{item_type}**    │ {folder_display_name}\n"
-                f"👤  **Artist**   │ {album_artist}\n"
-                f"📊  **Tracks**   │ {total_tracks} Tracks (Complete)\n"
-                f"🖼️  **Cover**    │ Included (`cover.jpg`)\n"
-                f"💎  **Quality**  │ {exact_quality_str}\n"
-                f"📦  **Archive**  │ {zip_size_mb:.1f} MB\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**{folder_display_name}**\n"
+                f"{album_artist}\n\n"
+                f"Tracks: {total_tracks} tracks\n"
+                f"Quality: {exact_quality_str}\n"
+                f"Archive: {zip_size_mb:.1f} MB"
             )
 
             await client.send_file(
@@ -764,15 +702,13 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
                 attributes=[DocumentAttributeFilename(zip_path.name)],
             )
 
-            delivered_header = "PLAYLIST DELIVERED" if is_playlist else "ALBUM DELIVERED"
+            delivered_header = "Playlist Delivered" if is_playlist else "Album Delivered"
             await status_msg.edit(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅  **{delivered_header}**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"{item_icon}  **{item_type}**    │ `{folder_display_name}`\n"
-                f"📊  **Tracks**   │ `{total_tracks} Tracks`\n"
-                f"📦  **Size**     │ `{zip_size_mb:.1f} MB`\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**{delivered_header}**\n\n"
+                f"{item_type}: {folder_display_name}\n"
+                f"Artist: {album_artist}\n"
+                f"Tracks: {total_tracks} tracks\n"
+                f"Size: {zip_size_mb:.1f} MB"
             )
 
             if zip_path.exists():
@@ -791,11 +727,8 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
     except Exception as e:
         logger.exception("Error during processing:")
         await status_msg.edit(
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"❌  **ERROR ENCOUNTERED**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"`{str(e)}`\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            f"**Error**\n\n"
+            f"{str(e)}"
         )
 
 # ---------------------------------------------------------
@@ -803,15 +736,15 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
 # ---------------------------------------------------------
 def main():
     print("=" * 65)
-    print("🎵 Apple Music 2GB Downloader Bot (Native Windows & MTProto)")
-    print("⚡ Max Upload Size: 2,000 MB (2 GB)")
+    print("Apple Music Downloader Bot (Native Windows & MTProto)")
+    print("Max Upload Size: 2,000 MB (2 GB)")
     
     # Check / Auto-start DRM Wrapper
     if ensure_wrapper_running():
-        print("✅ DRM Wrapper Status: ONLINE (Port 20020 Reachable)")
+        print("[+] DRM Wrapper Status: ONLINE (Port 20020 Reachable)")
     else:
-        print("⚠️ DRM Wrapper Status: OFFLINE (Port 20020 unreachable)")
-        print("👉 Please run 'start_wrapper.bat' manually if needed.")
+        print("[!] DRM Wrapper Status: OFFLINE (Port 20020 unreachable)")
+        print("[i] Run 'start_wrapper.bat' if needed.")
     print("=" * 65)
 
     settings = load_bot_settings()
@@ -823,19 +756,19 @@ def main():
     storefront = settings["storefront"]
 
     if not api_id or not api_hash or not bot_token or bot_token == "your-telegram-bot-token":
-        print("\n❌ Error: Telegram credentials not configured!")
+        print("\n[!] Error: Telegram credentials not configured!")
         print("Please configure 'telegram-api-id', 'telegram-api-hash', and 'telegram-bot-token'")
         print("in config.yaml or pass them via environment variables.")
         print("=" * 65)
         sys.exit(1)
 
     if not EXE_PATH.exists():
-        print("\n⚠️ am-dl.exe not found! Building from source...")
+        print("\n[!] am-dl.exe not found! Building from source...")
         try:
             subprocess.run(["go", "build", "-o", "am-dl.exe", "main.go"], cwd=str(BASE_DIR), check=True)
-            print("✅ am-dl.exe built successfully!\n")
+            print("[+] am-dl.exe built successfully!\n")
         except Exception as e:
-            print(f"❌ Failed to build am-dl.exe: {e}")
+            print(f"[!] Failed to build am-dl.exe: {e}")
             sys.exit(1)
 
     client = TelegramClient("am_bot_session", api_id, api_hash)
@@ -848,57 +781,44 @@ def main():
 
         if not is_user_authorized(sender_id, username, allowed_users):
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"⛔  **ACCESS DENIED**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"You are not authorized to use this bot.\n\n"
-                f"👤  **Your User ID:** `{sender_id}`\n\n"
-                f"Add this ID to `allowed-users` in `config.yaml` to grant access.\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**Access Denied**\n\n"
+                f"Your User ID: `{sender_id}`\n"
+                f"Add this ID to `allowed-users` in `config.yaml` to grant access."
             )
             return
 
         await event.reply(
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"✦  **APPLE MUSIC STUDIO**  ✦\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Welcome to **Apple Music Lossless Bot**.\n\n"
-            f"• **Search Songs**   │ `/search <song name>`\n"
-            f"• **Search Albums**  │ `/search album <album name>`\n"
-            f"• **Spatial Audio**  │ `/atmos <apple music link>`\n"
-            f"• **Quick Download** │ Paste any Apple Music link\n\n"
-            f"💎  **Audio Quality** │ 24-bit Studio Lossless ALAC\n"
-            f"📦  **Upload Limit**  │ 2,000 MB (2 GB) direct to chat\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Paste an Apple Music link or try `/search` to begin!"
+            "**Apple Music Downloader**\n\n"
+            "Download bit-perfect lossless audio and full albums from Apple Music.\n\n"
+            "• Search songs: `/search <song name>`\n"
+            "• Search albums: `/search album <album name>`\n"
+            "• Dolby Atmos: `/atmos <apple music link>`\n"
+            "• Direct download: Paste any Apple Music link\n\n"
+            "Audio Quality: 24-bit Lossless ALAC / Dolby Atmos\n"
+            "Upload Limit: 2,000 MB (2 GB) direct to chat\n\n"
+            "Paste a link or type `/search` to begin."
         )
 
     @client.on(events.NewMessage(pattern=r"^/help"))
     async def help_handler(event):
         await event.reply(
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"✦  **COMMAND REFERENCE**  ✦\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"• `/search <query>`\n"
-            f"  Search songs in Apple Music catalog.\n\n"
-            f"• `/search album <name>`\n"
-            f"  Search full albums with year and track counts.\n\n"
-            f"• `<apple music link>`\n"
-            f"  Displays instant Quality Selector buttons.\n\n"
-            f"• `/atmos <link>`\n"
-            f"  Download Dolby Atmos (Spatial Audio E-AC-3 JOC).\n\n"
-            f"• `/album <link>`\n"
-            f"  Force-download full album in a packaged `.zip` archive.\n\n"
-            f"• `/song <link>`\n"
-            f"  Force-download as single playable audio track.\n\n"
-            f"📂  **Folder Structure:**\n"
-            f"`AM-DL downloads/{{Year}} - {{AlbumName}}/`\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            "**Commands & Usage**\n\n"
+            "• `/search <query>`\n"
+            "  Search songs in the Apple Music catalog.\n\n"
+            "• `/search album <name>`\n"
+            "  Search albums with track count and release year.\n\n"
+            "• `<apple music link>`\n"
+            "  Paste any track, album, or playlist link to choose formats.\n\n"
+            "• `/atmos <link>`\n"
+            "  Download Dolby Atmos (Spatial Audio E-AC-3 JOC).\n\n"
+            "• `/album <link>`\n"
+            "  Download full album in a .zip archive.\n\n"
+            "• `/song <link>`\n"
+            "  Download as a single playable audio track."
         )
 
     # -----------------------------------------------------
     # /search command handler
-    # -----------------------------------------------------
     # -----------------------------------------------------
     @client.on(events.NewMessage(pattern=r"^/search(?:\s+(.+))?$"))
     async def search_handler(event):
@@ -907,18 +827,15 @@ def main():
         username = getattr(sender, "username", "")
 
         if not is_user_authorized(sender_id, username, allowed_users):
-            await event.reply(f"⛔ **Access Denied**: Your User ID: `{sender_id}`")
+            await event.reply(f"**Access Denied**: Your User ID: `{sender_id}`")
             return
 
         raw_query = event.pattern_match.group(1)
         if not raw_query:
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔍  **SEARCH USAGE**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"• **Songs**   │ `/search <song name>`\n"
-                f"• **Albums**  │ `/search album <album name>`\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                "**Search Usage**\n\n"
+                "• `/search <song name>`\n"
+                "• `/search album <album name>`"
             )
             return
 
@@ -932,7 +849,7 @@ def main():
             query = query[5:].strip()
 
         entity_label = "albums" if entity == "album" else "songs"
-        search_msg = await event.reply(f"🔍 Searching Apple Music for `{query}` ({entity_label})...")
+        search_msg = await event.reply(f"Searching Apple Music for \"{query}\" ({entity_label})...")
 
         results = await asyncio.get_running_loop().run_in_executor(
             None,
@@ -940,7 +857,7 @@ def main():
         )
 
         if not results:
-            await search_msg.edit(f"❌ No {entity_label} found for `{query}`.")
+            await search_msg.edit(f"No {entity_label} found for \"{query}\".")
             return
 
         search_id = str(uuid.uuid4())[:8]
@@ -1029,44 +946,38 @@ def main():
             if item.get("is_album"):
                 buttons = [
                     [
-                        Button.inline("💎 24-bit Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
-                        Button.inline("🌌 Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
+                        Button.inline("Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                        Button.inline("Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
                     ]
                 ]
                 year_str = f" ({item['year']})" if item.get("year") else ""
                 await safe_event_edit(
                     event,
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✦  **ALBUM SELECTED**  ✦\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"💿  **Album**    │ `{item['album_name']}{year_str}`\n"
-                    f"👤  **Artist**   │ `{item['artist_name']}`\n"
-                    f"📊  **Tracks**   │ `{item.get('track_count', 0)} Songs`\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"👇 *Choose download format for this entire album:*",
+                    f"**Album Selected**\n\n"
+                    f"Album: {item['album_name']}{year_str}\n"
+                    f"Artist: {item['artist_name']}\n"
+                    f"Tracks: {item.get('track_count', 0)} tracks\n\n"
+                    f"Choose download format:",
                     buttons=buttons
                 )
             # If selected item is a SONG
             else:
                 buttons = [
                     [
-                        Button.inline("💎 24-bit Lossless ALAC", data=f"dl:alac:{job_id}".encode()),
-                        Button.inline("🌌 Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
+                        Button.inline("Lossless ALAC", data=f"dl:alac:{job_id}".encode()),
+                        Button.inline("Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
                     ],
                     [
-                        Button.inline(f"📦 Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                        Button.inline("Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
                     ]
                 ]
                 await safe_event_edit(
                     event,
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"✦  **TRACK SELECTED**  ✦\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🎵  **Track**    │ `{item['track_name']}`\n"
-                    f"👤  **Artist**   │ `{item['artist_name']}`\n"
-                    f"💿  **Album**    │ `{item['album_name']}`\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"👇 *Choose download format:*",
+                    f"**Track Selected**\n\n"
+                    f"Title: {item['track_name']}\n"
+                    f"Artist: {item['artist_name']}\n"
+                    f"Album: {item['album_name']}\n\n"
+                    f"Choose download format:",
                     buttons=buttons
                 )
             return
@@ -1141,13 +1052,9 @@ def main():
         # Whitelist Security Check
         if not is_user_authorized(sender_id, username, allowed_users):
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"⛔  **ACCESS DENIED**\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"You are not authorized to use this bot.\n\n"
-                f"👤  **Your User ID:** `{sender_id}`\n\n"
-                f"Add this ID to `allowed-users` in `config.yaml` to grant access.\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                f"**Access Denied**\n\n"
+                f"Your User ID: `{sender_id}`\n"
+                f"Add this ID to `allowed-users` in `config.yaml` to grant access."
             )
             return
 
@@ -1162,7 +1069,7 @@ def main():
 
         if dl_atmos or force_album or force_song:
             if is_playlist_url(url):
-                status_msg = await event.reply("⏳ Initializing Playlist Download...")
+                status_msg = await event.reply("Initializing playlist download...")
                 await execute_download(
                     client=client,
                     chat_id=event.chat_id,
@@ -1177,7 +1084,7 @@ def main():
 
             is_single_song = force_song or (not force_album and ("?i=" in url or "/song/" in url))
             target_url = url if is_single_song else clean_album_url(url)
-            status_msg = await event.reply("⏳ Initializing...")
+            status_msg = await event.reply("Initializing download...")
             await execute_download(
                 client=client,
                 chat_id=event.chat_id,
@@ -1202,20 +1109,17 @@ def main():
             }
             buttons = [
                 [
-                    Button.inline("💎 24-bit Lossless Playlist (.zip)", data=f"dl:playlist:{job_id}".encode()),
-                    Button.inline("🌌 Dolby Atmos Playlist (.zip)", data=f"dl:atmos_playlist:{job_id}".encode()),
+                    Button.inline("Lossless Playlist (.zip)", data=f"dl:playlist:{job_id}".encode()),
+                    Button.inline("Dolby Atmos Playlist (.zip)", data=f"dl:atmos_playlist:{job_id}".encode()),
                 ]
             ]
-            desc_line = f"📝  **Info**       │ `{info['description']}`\n" if info.get("description") else ""
+            desc_line = f"Details: {info['description']}\n" if info.get("description") else ""
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **PLAYLIST DETECTED**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"📜  **Playlist**   │ `{info['title']}`\n"
+                f"**Playlist Detected**\n\n"
+                f"Playlist: {info['title']}\n"
                 f"{desc_line}"
-                f"🔗  **URL**        │ [Open in Apple Music]({url})\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"👇 *Choose download format for this entire playlist:*",
+                f"URL: {url}\n\n"
+                f"Choose download format:",
                 buttons=buttons,
                 link_preview=False
             )
@@ -1232,36 +1136,36 @@ def main():
         if has_song_id:
             buttons = [
                 [
-                    Button.inline("💎 24-bit Lossless ALAC", data=f"dl:alac:{job_id}".encode()),
-                    Button.inline("🌌 Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
+                    Button.inline("Lossless ALAC", data=f"dl:alac:{job_id}".encode()),
+                    Button.inline("Dolby Atmos", data=f"dl:atmos:{job_id}".encode()),
                 ],
                 [
-                    Button.inline("📦 Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                    Button.inline("Download Full Album (.zip)", data=f"dl:album:{job_id}".encode()),
                 ]
             ]
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **TRACK LINK DETECTED**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"👇 *Choose your desired audio format:*",
-                buttons=buttons
+                f"**Track Link Detected**\n\n"
+                f"URL: {url}\n\n"
+                f"Choose download format:",
+                buttons=buttons,
+                link_preview=False
             )
         else:
             buttons = [
                 [
-                    Button.inline("💎 24-bit Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
-                    Button.inline("🌌 Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
+                    Button.inline("Lossless Album (.zip)", data=f"dl:album:{job_id}".encode()),
+                    Button.inline("Dolby Atmos Album (.zip)", data=f"dl:atmos_album:{job_id}".encode()),
                 ]
             ]
             await event.reply(
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✦  **ALBUM LINK DETECTED**  ✦\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"👇 *Choose your desired audio format:*",
-                buttons=buttons
+                f"**Album Link Detected**\n\n"
+                f"URL: {url}\n\n"
+                f"Choose download format:",
+                buttons=buttons,
+                link_preview=False
             )
 
-    print("✅ 2GB Telegram Bot is online and listening for Apple Music links!")
+    print("[+] Telegram Bot is online and listening for Apple Music links.")
     client.start(bot_token=bot_token)
     client.run_until_disconnected()
 
