@@ -360,10 +360,45 @@ def parse_tracks_from_output(stdout_text: str):
         logger.error(f"Failed to parse JSON from output: {e}")
     return []
 
-def zip_entire_album(audio_files: list, cover_path: Path, archive_name: str) -> Path:
-    """Creates a single .zip containing all album tracks and cover.jpg."""
+def extract_release_year(track_path: Path) -> str:
+    """Extracts 4-digit release year from audio file metadata via ffmpeg."""
+    if not track_path or not track_path.exists():
+        return ""
+    ffmpeg_exe = BIN_DIR / "ffmpeg.exe"
+    if not ffmpeg_exe.exists():
+        ffmpeg_exe = Path("ffmpeg")
+    try:
+        res = subprocess.run(
+            [str(ffmpeg_exe), "-i", str(track_path)],
+            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        output = res.stderr or ""
+        m_date = re.search(r'^\s*date\s*:\s*(\d{4})', output, re.IGNORECASE | re.MULTILINE)
+        if not m_date:
+            m_date = re.search(r'^\s*releasetime\s*:\s*(\d{4})', output, re.IGNORECASE | re.MULTILINE)
+        if not m_date:
+            m_date = re.search(r'\b(19\d{2}|20\d{2})\b', output)
+        return m_date.group(1) if m_date else ""
+    except Exception:
+        return ""
+
+def zip_entire_album(audio_files: list, cover_path: Path, archive_name: str, is_playlist: bool = False) -> Path:
+    """Creates a single .zip containing all album tracks and cover.jpg formatted as 'Year - Album Name.zip'."""
     ARCHIVES_DIR.mkdir(parents=True, exist_ok=True)
     clean_name = strip_brackets(archive_name)
+
+    # Format as 'Year - Album Name' if not already starting with a 4-digit year and not a playlist
+    if not is_playlist and not re.match(r"^\d{4}\s*[-_]", clean_name):
+        first_track = audio_files[0]["path"] if audio_files else None
+        year = extract_release_year(first_track) if first_track else ""
+        if year:
+            clean_name = f"{year} - {clean_name}"
+
     safe_name = re.sub(r'[\\/*?:"<>|]', "_", clean_name)
     zip_path = ARCHIVES_DIR / f"{safe_name}.zip"
 
@@ -666,7 +701,7 @@ async def execute_download(client, chat_id, status_msg, url: str, is_single_song
             loop = asyncio.get_running_loop()
             zip_path = await loop.run_in_executor(
                 None,
-                lambda: zip_entire_album(audio_files, cover_path, folder_display_name)
+                lambda: zip_entire_album(audio_files, cover_path, folder_display_name, is_playlist=is_playlist)
             )
 
             zip_size_mb = zip_path.stat().st_size / (1024 * 1024)
