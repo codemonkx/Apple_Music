@@ -25,12 +25,13 @@ get-m3u8-port: "127.0.0.1:20020"
 get-m3u8-from-device: true
 get-account-port: "127.0.0.1:30020"
 get-account-from-device: true   # Auto-fetch media user token from wrapper for lyrics and full tracks
+auto-clean-downloads: false    # Set to true to clean intermediate raw track folders after uploading to Telegram
 
 # set to 'true' to exit on error instead of requiring manual intervention. (for using this program in scripts)
 exit-on-error: false
 
 #set 'all' to retrieve all m3u8, and set 'hires' to only detect hires m3u8.
-get-m3u8-mode: hires # all hires
+get-m3u8-mode: all # all hires
 aac-type: aac-lc # aac-lc aac aac-binaural aac-downmix
 alac-max: 192000  #192000 96000 48000 44100
 atmos-max: 2768  #2768 2448
