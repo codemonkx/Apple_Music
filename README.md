@@ -232,9 +232,11 @@ The DRM wrapper decrypts FairPlay/Widevine audio keys locally on your machine:
 
 3. **Launch Bot & DRM Wrapper (1-Command)**:
    ```bash
-   python3 bot.py
+   ./start.sh
+   # or
+   ./start_bot.sh
    ```
-   *`bot.py` automatically detects Linux and starts the native DRM wrapper daemon in the background on port `20020`.*
+   *Automatically verifies/starts the DRM wrapper on port `20020`, builds `am-dl` if needed, and launches `bot.py`.*
 
 ---
 

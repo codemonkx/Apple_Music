@@ -10,6 +10,9 @@
 !/setup.bat
 !/start_bot.bat
 !/start_wrapper.bat
+!/start.sh
+!/start_bot.sh
+!/start_wrapper.sh
 !/bot.py
 !/go.mod
 !/go.sum
