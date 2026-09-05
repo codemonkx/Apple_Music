@@ -190,12 +190,24 @@ Standard Telegram bot tokens are restricted to sending files under 50 MB. To unl
    media-user-token: "eyJh..."
    ```
 
-### Step 3: Launch the DRM Wrapper Daemon
-The DRM wrapper decrypts FairPlay/Widevine audio keys locally on your machine:
-1. Double-click **`start_wrapper.bat`**.
-2. On first run, it automatically creates `~/wrapper` inside your WSL environment and downloads the required DRM service.
-3. It runs an **auto-restarting daemon loop** (`while true; do ./wrapper; sleep 2; done`). If an Apple Music multi-device conflict occurs, it automatically restarts in 2 seconds.
-4. **Keep this terminal window running in the background** while downloading.
+### Step 3: Authenticate Apple ID in Wrapper (One-Time Setup for Lossless)
+To decrypt genuine **24-bit Lossless ALAC** and **Dolby Atmos**, the wrapper requires an active Apple Music account session:
+1. Open a terminal and navigate to the wrapper directory:
+   - **Linux**: `cd ~/wrapper`
+   - **Windows**: Open PowerShell, run `wsl`, then `cd ~/wrapper`
+2. Run the login command with your Apple ID email and password:
+   ```bash
+   ./wrapper -L "your_apple_id@email.com:your_password"
+   ```
+3. Enter the 2-Factor Authentication (2FA) verification code displayed on your Apple device when prompted.
+4. Once logged in, the wrapper generates and caches your FairPlay session tokens locally.
+   > **Note**: Your password is **never saved** in any config or database file. It is used only in memory during login to obtain cryptographic session tokens from Apple. You only need to run this command **once**.
+
+### Step 4: Launch the DRM Wrapper Daemon
+The DRM wrapper decrypts FairPlay audio keys locally on your machine:
+* **Windows**: Double-click **`start_wrapper.bat`** (or `.\start_wrapper.bat`).
+* **Linux**: Run **`./start_wrapper.sh`** (or `./start.sh`, which automatically launches the wrapper).
+* It runs an auto-restarting daemon loop on port `20020` & `40020`. Keep it running in the background while using the bot or CLI.
 
 ---
 
